@@ -48,6 +48,19 @@ pub fn single_char_xor_break(cypher: &str) -> String {
     best
 }
 
+pub fn multi_string_xor_detection(strings: std::str::Lines) -> String {
+    let mut max = 0;
+    let mut best = String::default();
+    for string in strings {
+        let decrypted_candidate = single_char_xor_break(string);
+        if get_english_score(&decrypted_candidate) > max {
+            max = get_english_score(&decrypted_candidate);
+            best = string.to_string();
+        }
+    }
+    best
+}
+
 #[test]
 fn challenge_1() {
     assert_eq!(
@@ -74,5 +87,19 @@ fn challenge_3() {
             "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
         ),
         "Cooking MC's like a pound of bacon",
+    );
+}
+
+#[test]
+fn challenge_4() {
+    use std::fs;
+    let decrypted = multi_string_xor_detection(fs::read_to_string("data/4.txt").unwrap().lines());
+    assert_eq!(
+        decrypted,
+        "7b5a4215415d544115415d5015455447414c155c46155f4058455c5b523f",
+    );
+    assert_eq!(
+        single_char_xor_break(&decrypted),
+        "Now that the party is jumping\n",
     );
 }
