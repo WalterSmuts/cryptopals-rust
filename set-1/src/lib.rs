@@ -61,6 +61,15 @@ pub fn multi_string_xor_detection(strings: std::str::Lines) -> String {
     best
 }
 
+pub fn encrypt_repeating_key_xor(plain_text: &str, key: &str) -> String {
+    let mut a = String::default();
+    while a.len() + key.len() < plain_text.len() {
+        a.push_str(key);
+    }
+    a.push_str(&key[..plain_text.len() - a.len()]);
+    fixed_xor(&hex::encode(plain_text), &hex::encode(a))
+}
+
 #[test]
 fn challenge_1() {
     assert_eq!(
@@ -101,5 +110,16 @@ fn challenge_4() {
     assert_eq!(
         single_char_xor_break(&decrypted),
         "Now that the party is jumping\n",
+    );
+}
+
+#[test]
+fn challenge_5() {
+    assert_eq!(
+        encrypt_repeating_key_xor(
+            "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal",
+            "ICE"
+        ),
+        "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f",
     );
 }
