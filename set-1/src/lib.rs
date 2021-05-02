@@ -30,9 +30,9 @@ pub fn get_english_score(s: &str) -> usize {
     i
 }
 
-pub fn single_char_xor_break(cypher: Vec<u8>) -> Vec<u8> {
+pub fn most_likely_single_char_xor(cypher: Vec<u8>) -> u8 {
     let mut max = 0;
-    let mut best = Vec::default();
+    let mut best = 0;
 
     for byte in 0..u8::MAX {
         let decrypted_candidate = single_char_xor_decrypt(cypher.clone(), byte);
@@ -40,10 +40,15 @@ pub fn single_char_xor_break(cypher: Vec<u8>) -> Vec<u8> {
             get_english_score(&String::from_utf8(decrypted_candidate.clone()).unwrap_or_default());
         if score > max {
             max = score;
-            best = decrypted_candidate.clone();
+            best = byte;
         }
     }
     best
+}
+
+pub fn single_char_xor_break(cypher: Vec<u8>) -> Vec<u8> {
+    let byte = most_likely_single_char_xor(cypher.clone());
+    single_char_xor_decrypt(cypher, byte)
 }
 
 pub fn multi_string_xor_detection(candidates: Vec<Vec<u8>>) -> Vec<u8> {
