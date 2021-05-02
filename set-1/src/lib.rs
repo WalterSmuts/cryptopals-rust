@@ -1,3 +1,5 @@
+const MAX_KEY_SIZE: usize = 40;
+
 pub fn hex_to_base64(hex: &str) -> String {
     base64::encode(hex::decode(hex).unwrap())
 }
@@ -80,6 +82,48 @@ pub fn hamming_distance(a: Vec<u8>, b: Vec<u8>) -> u32 {
         .fold(0, |acc, x| acc + x.count_ones())
 }
 
+pub fn get_most_likely_key_sizes(cypher: &Vec<u8>, amount: usize) -> Vec<usize> {
+    let mut contenders = Vec::new();
+    for keysize in 2..MAX_KEY_SIZE {
+        let mut hamming_distance_sum = 0;
+        for idx in 0..(cypher.len() / MAX_KEY_SIZE / 2) {
+            let a = &cypher[idx * keysize..(idx + 1) * keysize];
+            let b = &cypher[(idx + 1) * keysize..(idx + 2) * keysize];
+            hamming_distance_sum += hamming_distance(a.to_vec(), b.to_vec());
+        }
+        let normalized_hamming_distance = hamming_distance_sum as f64 / keysize as f64;
+        contenders.push((keysize, normalized_hamming_distance));
+    }
+    contenders.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+    contenders.iter().map(|a| a.0).take(amount).collect()
+}
+
+pub fn get_most_likely_key(cypher: &Vec<u8>, size: usize) -> Vec<u8> {
+    let mut key = Vec::new();
+    for start in 0..size {
+        let sub_cypher = &cypher[start..];
+        let sub_cypher = sub_cypher.to_vec().into_iter().step_by(size).collect();
+        key.push(most_likely_single_char_xor(sub_cypher));
+    }
+    key
+}
+
+pub fn variable_length_xor_break(cypher: Vec<u8>) -> Vec<u8> {
+    let sizes = get_most_likely_key_sizes(&cypher, 1);
+    let mut candidates = Vec::new();
+    for size in sizes {
+        let key = get_most_likely_key(&cypher, size);
+        candidates.push(encrypt_repeating_key_xor(cypher.clone(), key.clone()));
+    }
+    candidates.sort_by(|a, b| {
+        let a = get_english_score(&String::from_utf8(a.to_vec()).unwrap_or_default());
+        let b = get_english_score(&String::from_utf8(b.to_vec()).unwrap_or_default());
+        a.cmp(&b)
+    });
+
+    candidates.pop().unwrap()
+}
+
 #[test]
 fn challenge_1() {
     assert_eq!(
@@ -150,5 +194,17 @@ fn hamming_distance_test() {
             "wokka wokka!!!".as_bytes().to_vec()
         ),
         37
+    );
+}
+
+#[test]
+fn challenge_6() {
+    use std::fs;
+    let original =
+        base64::decode(fs::read_to_string("data/6.txt").unwrap().replace('\n', "")).unwrap();
+    let decrypted = variable_length_xor_break(original);
+    assert_eq!(
+        String::from_utf8(decrypted).unwrap().replace(" \n", "\n"),
+        fs::read_to_string("data/6-solved.txt").unwrap(),
     );
 }
