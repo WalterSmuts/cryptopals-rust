@@ -201,6 +201,22 @@ fn challenge_6() {
     let decrypted = variable_length_xor_break(original);
     assert_eq!(
         String::from_utf8(decrypted).unwrap().replace(" \n", "\n"),
-        fs::read_to_string("data/6-solved.txt").unwrap(),
+        fs::read_to_string("data/6-and-7-solved.txt").unwrap(),
+    );
+}
+
+#[test]
+fn challenge_7() {
+    use openssl::symm::decrypt;
+    use openssl::symm::Cipher;
+    use std::fs;
+    let cipher = Cipher::aes_128_ecb();
+    let key = b"YELLOW SUBMARINE";
+    let input =
+        &base64::decode(fs::read_to_string("data/7.txt").unwrap().replace('\n', "")).unwrap();
+    let decrypted = decrypt(cipher, key, None, &input).unwrap();
+    assert_eq!(
+        String::from_utf8(decrypted).unwrap().replace(" \n", "\n"),
+        fs::read_to_string("data/6-and-7-solved.txt").unwrap(),
     );
 }
