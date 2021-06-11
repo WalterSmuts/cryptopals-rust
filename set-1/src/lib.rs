@@ -123,6 +123,19 @@ pub fn variable_length_xor_break(cypher: Vec<u8>) -> Vec<u8> {
     candidates.pop().unwrap()
 }
 
+pub fn is_aes_ecb_encrypted(candidate: Vec<u8>) -> bool {
+    let mut chunks: Vec<Vec<u8>> = Vec::new();
+    let mut cloned_candidate = candidate.clone();
+    while cloned_candidate.len() > 15 {
+        let chunk = cloned_candidate.drain(0..16).collect();
+        if chunks.contains(&chunk) {
+            return true;
+        }
+        chunks.push(chunk);
+    }
+    false
+}
+
 #[test]
 fn challenge_1() {
     assert_eq!(
@@ -218,5 +231,20 @@ fn challenge_7() {
     assert_eq!(
         String::from_utf8(decrypted).unwrap().replace(" \n", "\n"),
         fs::read_to_string("data/6-and-7-solved.txt").unwrap(),
+    );
+}
+
+#[test]
+fn challenge_8() {
+    use std::fs;
+    let candidates: Vec<Vec<u8>> = fs::read_to_string("data/8.txt")
+        .unwrap()
+        .split('\n')
+        .map(|candidate| base64::decode(candidate).unwrap())
+        .collect();
+
+    assert_eq!(
+        candidates.into_iter().position(is_aes_ecb_encrypted),
+        Some(132),
     );
 }
